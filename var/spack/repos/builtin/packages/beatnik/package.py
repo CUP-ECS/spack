@@ -95,11 +95,7 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
         args = []
 
         # Point to BLT appropriately
-        args.extend(
-            [
-                "-DBLT_SOURCE_DIR=%s" % self.spec["blt"].prefix,
-            ]
-        )
+        args.append("-DBLT_SOURCE_DIR={0}".format(self.spec["blt"].prefix))
 
         # Use hipcc as the c compiler if we are compiling for rocm. Doing it this way
         # keeps the wrapper insted of changeing CMAKE_CXX_COMPILER keeps the spack wrapper
