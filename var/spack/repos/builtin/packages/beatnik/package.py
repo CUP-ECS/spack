@@ -8,7 +8,7 @@ from spack.package import *
 from .blt import llnl_link_helpers
 
 
-class Beatnik(CachedCMakePackage, CudaPackage, ROCmPackage):
+class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     """Fluid interface model solver based on Pandya and Shkoller's Z-Model formulation."""
 
     homepage = "https://github.com/CUP-ECS/beatnik"
@@ -69,7 +69,7 @@ class Beatnik(CachedCMakePackage, CudaPackage, ROCmPackage):
     conflicts("mpich ~rocm", when="+rocm")
     conflicts("openmpi ~cuda", when="+cuda")
     conflicts("^intel-mpi")  # Heffte won't build with intel MPI because of needed C++ MPI support
-    conflicts("^spectrum-mpi", when="^cuda@11.3:")  # cuda-aware spectrum is broken with cuda 11.3:
+    conflicts("^spectrum-mpi", when="^cuda@11.3:") # cuda-aware spectrum is broken with cuda 11.3:
 
     # Propagate CUDA and AMD GPU targets to cabana
     for cuda_arch in CudaPackage.cuda_arch_values:
@@ -80,15 +80,15 @@ class Beatnik(CachedCMakePackage, CudaPackage, ROCmPackage):
             when="+rocm amdgpu_target=%s" % amdgpu_value,
         )
 
-    def initconfig_compiler_entries(self):
-        spec = self.spec
-        compiler = self.compiler
-        # Default entries are already defined in CachedCMakePackage, inherit them:
-        entries = super().initconfig_compiler_entries()
-
-        llnl_link_helpers(entries, spec, compiler)
-
-        return entries
+#    def initconfig_compiler_entries(self):
+#        spec = self.spec
+#        compiler = self.compiler
+#        # Default entries are already defined in CachedCMakePackage, inherit them:
+#        entries = super().initconfig_compiler_entries()
+#
+#        llnl_link_helpers(entries, spec, compiler)
+#
+#        return entries
 
     # CMake specific build functions
     def cmake_args(self):
@@ -104,6 +104,8 @@ class Beatnik(CachedCMakePackage, CudaPackage, ROCmPackage):
         # Use hipcc as the c compiler if we are compiling for rocm. Doing it this way
         # keeps the wrapper insted of changeing CMAKE_CXX_COMPILER keeps the spack wrapper
         # and the rpaths it sets for us from the underlying spec.
+        #if "+rocm" in self.spec:
+        #    options.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
         if "+rocm" in self.spec:
             env["SPACK_CXX"] = self.spec["hip"].hipcc
 
