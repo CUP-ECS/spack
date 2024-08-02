@@ -5,9 +5,6 @@
 
 from spack.package import *
 
-from .blt import llnl_link_helpers
-
-
 class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     """Fluid interface model solver based on Pandya and Shkoller's Z-Model formulation."""
 
@@ -79,16 +76,6 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
             "cabana +rocm amdgpu_target=%s" % amdgpu_value,
             when="+rocm amdgpu_target=%s" % amdgpu_value,
         )
-
-#    def initconfig_compiler_entries(self):
-#        spec = self.spec
-#        compiler = self.compiler
-#        # Default entries are already defined in CachedCMakePackage, inherit them:
-#        entries = super().initconfig_compiler_entries()
-#
-#        llnl_link_helpers(entries, spec, compiler)
-#
-#        return entries
 
     # CMake specific build functions
     def cmake_args(self):
