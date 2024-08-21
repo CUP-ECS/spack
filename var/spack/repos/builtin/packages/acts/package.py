@@ -343,6 +343,7 @@ class Acts(CMakePackage, CudaPackage):
     depends_on("eigen @3.3.7:3.3.99", when="@:15.0")
     depends_on("geant4", when="+fatras_geant4")
     depends_on("geant4", when="+geant4")
+    depends_on("geomodel @4.6.0:", when="+geomodel")
     depends_on("git-lfs", when="@12.0.0:")
     depends_on("gperftools", when="+profilecpu")
     depends_on("gperftools", when="+profilemem")
@@ -493,7 +494,7 @@ class Acts(CMakePackage, CudaPackage):
             if spec.satisfies("@14: +vecmem"):
                 args.append("-DACTS_USE_SYSTEM_VECMEM=ON")
 
-        if "+cuda" in spec:
+        if spec.satisfies("+cuda"):
             cuda_arch = spec.variants["cuda_arch"].value
             if cuda_arch != "none":
                 args.append(f"-DCUDA_FLAGS=-arch=sm_{cuda_arch[0]}")
