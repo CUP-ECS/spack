@@ -9,6 +9,7 @@ from spack.package import *
 class Cabanaghost(CMakePackage, CudaPackage, ROCmPackage):
     """Halo Exchange Benchmark for Exploring Fine-grain Communication APIs and Performance in the Cabana/Cajita performance portability framework."""
 
+
     homepage = "https://github.com/CUP-ECS/CabanaGhost"
     git = "https://github.com/CUP-ECS/CabanaGhost.git"
 

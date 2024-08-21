@@ -5,7 +5,6 @@
 
 from spack.package import *
 
-
 class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     """Fluid interface model solver based on Pandya and Shkoller's Z-Model formulation."""
 
@@ -19,8 +18,6 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     version("1.0", commit="ae31ef9cb44678d5ace77994b45b0778defa3d2f")
     version("develop", branch="develop")
     version("main", branch="main")
-
-    depends_on("cxx", type="build")  # generated
 
     # Variants are primarily backends to build on GPU systems and pass the right
     # informtion to the packages we depend on
@@ -40,6 +37,9 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("mpich +rocm", when="^[virtuals=mpi] mpich")
         depends_on("mvapich2-gdr +rocm", when="^[virtuals=mpi] mvapich2-gdr")
 
+    # BLT depdendency
+    depends_on("blt@develop", when="@develop")
+
     # Kokkos dependencies
     depends_on("kokkos @4:")
     depends_on("kokkos +cuda +cuda_lambda +cuda_constexpr", when="+cuda")
@@ -47,7 +47,7 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos +wrapper", when="%gcc+cuda")
 
     # Cabana dependencies
-    depends_on("cabana @0.6.0 +grid +heffte +silo +hdf5 +mpi")
+    depends_on("cabana @master +grid +heffte +arborx +silo +hdf5 +mpi")
     depends_on("cabana +cuda", when="+cuda")
     depends_on("cabana +rocm", when="+rocm")
 
@@ -66,7 +66,7 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("mpich ~rocm", when="+rocm")
     conflicts("openmpi ~cuda", when="+cuda")
     conflicts("^intel-mpi")  # Heffte won't build with intel MPI because of needed C++ MPI support
-    conflicts("^spectrum-mpi", when="^cuda@11.3:")  # cuda-aware spectrum is broken with cuda 11.3:
+    conflicts("^spectrum-mpi", when="^cuda@11.3:") # cuda-aware spectrum is broken with cuda 11.3:
 
     # Propagate CUDA and AMD GPU targets to cabana
     for cuda_arch in CudaPackage.cuda_arch_values:
@@ -80,6 +80,9 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     # CMake specific build functions
     def cmake_args(self):
         args = []
+
+        # Point to BLT appropriately
+        args.append("-DBLT_SOURCE_DIR={0}".format(self.spec["blt"].prefix))
 
         # Use hipcc as the c compiler if we are compiling for rocm. Doing it this way
         # keeps the wrapper insted of changeing CMAKE_CXX_COMPILER keeps the spack wrapper
