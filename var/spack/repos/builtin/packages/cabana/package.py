@@ -10,13 +10,15 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
     """The Exascale Co-Design Center for Particle Applications Toolkit"""
 
     homepage = "https://github.com/ECP-copa/Cabana"
-    git = "https://github.com/ECP-copa/Cabana.git"
-    url = "https://github.com/ECP-copa/Cabana/archive/0.7.0.tar.gz"
+    
+    # Pointing this to CUP-ECS Cabana
+    git = "https://github.com/CUP-ECS/Cabana.git"
+    # url = "https://github.com/ECP-copa/Cabana/archive/0.7.0.tar.gz"
 
     maintainers("junghans", "streeve", "sslattery")
 
     tags = ["e4s", "ecp"]
-
+    
     version("master", branch="master")
     version("0.7.0", sha256="3d46532144ea9a3f36429a65cccb7562d1244f1389dd8aff0d253708d1ec9838")
     version("0.6.1", sha256="fea381069fe707921831756550a665280da59032ea7914f7ce2a01ed467198bc")
@@ -27,6 +29,9 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
     version("0.2.0", sha256="3e0c0e224e90f4997f6c7e2b92f00ffa18f8bcff72f789e0908cea0828afc2cb")
     version("0.1.0", sha256="3280712facf6932b9d1aff375b24c932abb9f60a8addb0c0a1950afd0cb9b9cf")
     version("0.1.0-rc0", sha256="73754d38aaa0c2a1e012be6959787108fec142294774c23f70292f59c1bdc6c5")
+    
+    # Workaround to tell Spack the comm-optimizations version is "newer than" 0.7.0
+    version("0.7.99", branch="comm-optimizations")
 
     depends_on("c", type="build", when="+mpi")
     depends_on("cxx", type="build")
@@ -103,6 +108,8 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("silo", when="@0.5.0:+silo")
     depends_on("hdf5", when="@0.6.0:+hdf5")
     depends_on("mpi", when="+mpi")
+    # MPI Advance dependency
+    depends_on("mpi-advance@master", when="@0.7.99:+mpi")
 
     # CMakeLists.txt of Cabana>=0.6 always enables HDF5 with CMake >= 3.26 (not changed post-0.6):
     conflicts("~hdf5", when="@0.6.0: ^cmake@3.26:")

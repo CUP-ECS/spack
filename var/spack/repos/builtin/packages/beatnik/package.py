@@ -13,7 +13,11 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     maintainers("patrickb314", "JStewart28")
 
     license("BSD-3-Clause")
-
+    
+    # Version for testing communication optimizations in Cabana
+    version("1.2-dev", branch="cabana-mpi", submodules=True)
+    
+    # Other versions
     version("1.1", commit="7d5a6fa588bcb7065fc53c3e8ae52d4d7f13b6f1", submodules=True)
     version("1.0", commit="ae31ef9cb44678d5ace77994b45b0778defa3d2f")
     version("develop", branch="develop", submodules=True)
@@ -39,6 +43,7 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
 
     # BLT depdendency
     depends_on("blt@develop", when="@develop")
+    depends_on("blt@develop", when="@1.2-dev")
 
     # Kokkos dependencies
     depends_on("kokkos @4:")
@@ -47,6 +52,7 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos +wrapper", when="+cuda%gcc")
 
     # Cabana dependencies
+    depends_on("cabana @0.7.99 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.2-dev")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.1")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.0")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@develop")
