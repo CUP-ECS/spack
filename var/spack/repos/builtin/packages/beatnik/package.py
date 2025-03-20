@@ -49,15 +49,18 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     # Cabana dependencies
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.1")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.0")
-    depends_on("cabana @master +grid +heffte +silo +hdf5 +mpi +arborx", when="@develop")
+    depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@develop")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@main")
     depends_on("cabana +cuda", when="+cuda")
     depends_on("cabana +rocm", when="+rocm")
 
     # Silo dependencies
     depends_on("silo @4.11:")
-    depends_on("silo @4.11.1 +fpzip+hzip~python", when="%cce")
+    depends_on("silo @4.11.1 ~python", when="%cce")
     # Eariler silo versions have trouble with cce
+
+    # VTK dependencies
+    depends_on("vtk @9.4.1 +mpi")
 
     # Heffte dependencies - We always require FFTW so that there's a host
     # backend even when we're compiling for GPUs
@@ -70,7 +73,8 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("mpich ~rocm", when="+rocm")
     conflicts("openmpi ~cuda", when="+cuda")
     conflicts("^intel-mpi")  # Heffte won't build with intel MPI because of needed C++ MPI support
-    conflicts("^spectrum-mpi", when="^cuda@11.3:") # cuda-aware spectrum is broken with cuda 11.3:
+    # Commenting so we can test C++20 and cuda@12.2.1 on Lassen
+    # conflicts("^spectrum-mpi", when="^cuda@11.3:") # cuda-aware spectrum is broken with cuda 11.3:
 
     # Propagate CUDA and AMD GPU targets to cabana
     for cuda_arch in CudaPackage.cuda_arch_values:
@@ -101,6 +105,8 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
             args.append(
                 "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath={0} -L{0} -lmpi_gtl_hsa".format(gtl_dir)
             )
+            # Assuming we are on Tioga, addd NuMesh
+            args.append("-DNuMesh_PREFIX=~/install-tioga/numesh")
         elif self.spec.satisfies("+cuda ^cray-mpich"):
             gtl_dir = join_path(self.spec["cray-mpich"].prefix, "..", "..", "..", "gtl", "lib")
             args.append(
