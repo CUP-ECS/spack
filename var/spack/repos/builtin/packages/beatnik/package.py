@@ -8,14 +8,11 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     """Fluid interface model solver based on Pandya and Shkoller's Z-Model formulation."""
 
     homepage = "https://github.com/CUP-ECS/beatnik"
-    git = "https://github.com/CUP-ECS/beatnik.git"
+    git = "git@github.com:CUP-ECS/beatnik.git"
 
     maintainers("patrickb314", "JStewart28")
 
     license("BSD-3-Clause")
-    
-    # Version for testing communication optimizations in Cabana
-    version("1.2-dev", branch="cabana-mpi", submodules=True)
     
     # Other versions
     version("1.1", commit="7d5a6fa588bcb7065fc53c3e8ae52d4d7f13b6f1", submodules=True)
@@ -43,7 +40,6 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
 
     # BLT depdendency
     depends_on("blt@develop", when="@develop")
-    depends_on("blt@develop", when="@1.2-dev")
 
     # Kokkos dependencies
     depends_on("kokkos @4:")
@@ -52,7 +48,6 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos +wrapper", when="+cuda%gcc")
 
     # Cabana dependencies
-    depends_on("cabana @0.7.99 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.2-dev")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.1")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.0")
     depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@develop")
@@ -67,6 +62,9 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
 
     # VTK dependencies
     depends_on("vtk @9.4.1 +mpi")
+    
+    # NuMesh dependency
+    depends_on("numesh@develop")
 
     # Heffte dependencies - We always require FFTW so that there's a host
     # backend even when we're compiling for GPUs
@@ -97,6 +95,9 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
 
         # Point to BLT appropriately
         args.append("-DBLT_SOURCE_DIR={0}".format(self.spec["blt"].prefix))
+        
+        # Add numesh
+        # args.append("-DNUMESH_DIR={0}".format(self.spec["numesh"].prefix))
 
         # Use hipcc as the c compiler if we are compiling for rocm. Doing it this way
         # keeps the wrapper insted of changeing CMAKE_CXX_COMPILER keeps the spack wrapper
