@@ -1,31 +1,31 @@
-# Copyright Spack Project Developers. See COPYRIGHT file for details.
+# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
+# Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 from spack.package import *
 
-class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
-    """Fluid interface model solver based on Pandya and Shkoller's Z-Model formulation."""
 
-    homepage = "https://github.com/CUP-ECS/beatnik"
-    git = "git@github.com:CUP-ECS/beatnik.git"
+class Cabanaghost(CMakePackage, CudaPackage, ROCmPackage):
+    """Halo Exchange Benchmark for Exploring Fine-grain Communication APIs and Performance in the Cabana/Cajita performance portability framework."""
 
-    maintainers("patrickb314", "JStewart28")
+
+    homepage = "https://github.com/CUP-ECS/CabanaGhost"
+    git = "https://github.com/CUP-ECS/CabanaGhost.git"
+
+    maintainers("patrickb314", "EvanDrakeSuggs")
 
     license("BSD-3-Clause")
-    
-    # Other versions
-    version("1.1", commit="7d5a6fa588bcb7065fc53c3e8ae52d4d7f13b6f1", submodules=True)
-    version("1.0", commit="ae31ef9cb44678d5ace77994b45b0778defa3d2f")
-    version("develop", branch="develop", submodules=True)
-    version("main", branch="main", submodules=True)
+
+    version("develop", branch="develop")
+    version("main", branch="main")
 
     # Variants are primarily backends to build on GPU systems and pass the right
     # informtion to the packages we depend on
     variant("cuda", default=False, description="Use CUDA support from subpackages")
     variant("openmp", default=False, description="Use OpenMP support from subpackages")
 
-    # Dependencies for all Beatnik versions
+    # Dependencies for all CabanaGhost versions
     depends_on("mpi")
     with when("+cuda"):
         depends_on("mpich +cuda", when="^[virtuals=mpi] mpich")
@@ -38,46 +38,26 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("mpich +rocm", when="^[virtuals=mpi] mpich")
         depends_on("mvapich2-gdr +rocm", when="^[virtuals=mpi] mvapich2-gdr")
 
-    # BLT depdendency
-    depends_on("blt@develop", when="@develop")
-
     # Kokkos dependencies
     depends_on("kokkos @4:")
     depends_on("kokkos +cuda +cuda_lambda +cuda_constexpr", when="+cuda")
     depends_on("kokkos +rocm", when="+rocm")
-    depends_on("kokkos +wrapper", when="+cuda%gcc")
+    depends_on("kokkos +wrapper", when="%gcc+cuda")
 
     # Cabana dependencies
-    depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.1")
-    depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@1.0")
-    depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@develop")
-    depends_on("cabana @0.7.0 +grid +heffte +silo +hdf5 +mpi +arborx", when="@main")
+    depends_on("cabana @0.6.0: +grid +silo +hdf5 +mpi")
     depends_on("cabana +cuda", when="+cuda")
     depends_on("cabana +rocm", when="+rocm")
 
     # Silo dependencies
     depends_on("silo @4.11:")
-    depends_on("silo @4.11.1 ~python", when="%cce")
-    # Eariler silo versions have trouble with cce
-
-    # VTK dependencies
-    depends_on("vtk @9.4.1 +mpi")
-    
-    # NuMesh dependency
-    depends_on("numesh@develop")
-
-    # Heffte dependencies - We always require FFTW so that there's a host
-    # backend even when we're compiling for GPUs
-    depends_on("heffte +fftw")
-    depends_on("heffte +cuda", when="+cuda")
-    depends_on("heffte +rocm", when="+rocm")
+    depends_on("silo @4.11.1:", when="%cce")  # Eariler silo versions have trouble cce
 
     # If we're using CUDA or ROCM, require MPIs be GPU-aware
     conflicts("mpich ~cuda", when="+cuda")
     conflicts("mpich ~rocm", when="+rocm")
     conflicts("openmpi ~cuda", when="+cuda")
-    # Heffte won't build with intel MPI because of needed C++ MPI support
-    conflicts("^intel-oneapi-mpi")
+    conflicts("^intel-mpi")  # Heffte won't build with intel MPI because of needed C++ MPI support
     conflicts("^spectrum-mpi", when="^cuda@11.3:")  # cuda-aware spectrum is broken with cuda 11.3:
 
     # Propagate CUDA and AMD GPU targets to cabana
@@ -93,27 +73,19 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     def cmake_args(self):
         args = []
 
-        # Point to BLT appropriately
-        args.append("-DBLT_SOURCE_DIR={0}".format(self.spec["blt"].prefix))
-        
-        # Add numesh
-        # args.append("-DNUMESH_DIR={0}".format(self.spec["numesh"].prefix))
-
         # Use hipcc as the c compiler if we are compiling for rocm. Doing it this way
-        # keeps the wrapper insted of changeing CMAKE_CXX_COMPILER keeps the spack wrapper
+        # keeps the wrapper insted of changing CMAKE_CXX_COMPILER keeps the spack wrapper
         # and the rpaths it sets for us from the underlying spec.
-        if self.spec.satisfies("+rocm"):
+        if "+rocm" in self.spec:
             env["SPACK_CXX"] = self.spec["hip"].hipcc
 
         # If we're building with cray mpich, we need to make sure we get the GTL library for
-        # gpu-aware MPI, since cabana and beatnik require it
+        # gpu-aware MPI, since cabana requires it
         if self.spec.satisfies("+rocm ^cray-mpich"):
             gtl_dir = join_path(self.spec["cray-mpich"].prefix, "..", "..", "..", "gtl", "lib")
             args.append(
                 "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath={0} -L{0} -lmpi_gtl_hsa".format(gtl_dir)
             )
-            # Assuming we are on Tioga, addd NuMesh
-            args.append("-DNuMesh_PREFIX=~/install-tioga/numesh")
         elif self.spec.satisfies("+cuda ^cray-mpich"):
             gtl_dir = join_path(self.spec["cray-mpich"].prefix, "..", "..", "..", "gtl", "lib")
             args.append(

@@ -4,7 +4,6 @@
 
 from spack.package import *
 
-
 class Libxcrypt(AutotoolsPackage):
     """libxcrypt is a modern library for one-way hashing of passwords."""
 
@@ -21,7 +20,6 @@ class Libxcrypt(AutotoolsPackage):
         )
 
     license("LGPL-2.1-or-later")
-
     version("4.4.38", sha256="80304b9c306ea799327f01d9a7549bdb28317789182631f1b54f4511b4206dd6")
     # 4.4.37 requires pkg-config and is not included here
     version("4.4.36", sha256="e5e1f4caee0a01de2aee26e3138807d6d3ca2b8e67287966d1fefd65e1fd8943")
@@ -66,6 +64,7 @@ class Libxcrypt(AutotoolsPackage):
             "ac_cv_path_python3_passlib=not found",
             # Disable -Werror, which breaks with newer compilers
             "--disable-werror",
+            "--disable-version-script",
         ]
         args += self.enable_or_disable("obsolete-api", variant="obsolete_api")
         return args
