@@ -638,7 +638,7 @@ class TestSpecSemantics:
         a = Spec("multivalue-variant foo=bar")
         b = Spec("multivalue-variant foo=bar,baz")
         # The specs are abstract and they **could** be constrained
-        assert a.satisfies(b)
+        assert b.satisfies(a) and not a.satisfies(b)
         # An abstract spec can instead be constrained
         assert a.constrain(b)
 
@@ -973,13 +973,10 @@ class TestSpecSemantics:
         with pytest.raises(SpecFormatStringError):
             spec.format(fmt_str)
 
-    def test_combination_of_wildcard_or_none(self):
-        # Test that using 'none' and another value raises
-        with pytest.raises(spack.spec_parser.SpecParsingError, match="cannot be combined"):
-            Spec("multivalue-variant foo=none,bar")
-
-        # Test that using wildcard and another value raises
-        with pytest.raises(spack.spec_parser.SpecParsingError, match="cannot be combined"):
+    def test_wildcard_is_invalid_variant_value(self):
+        """The spec string x=* is parsed as a multi-valued variant with values the empty set.
+        That excludes * as a literal variant value."""
+        with pytest.raises(spack.spec_parser.SpecParsingError, match="cannot use reserved value"):
             Spec("multivalue-variant foo=*,bar")
 
     def test_errors_in_variant_directive(self):
@@ -1946,6 +1943,18 @@ def test_edge_equality_does_not_depend_on_virtual_order():
     assert edge1 == edge2
     assert tuple(sorted(edge1.virtuals)) == edge1.virtuals
     assert tuple(sorted(edge2.virtuals)) == edge1.virtuals
+
+
+def test_update_virtuals():
+    parent, child = Spec("parent"), Spec("child")
+    edge = DependencySpec(parent, child, depflag=0, virtuals=("mpi", "lapack"))
+    assert edge.update_virtuals("blas")
+    assert edge.virtuals == ("blas", "lapack", "mpi")
+    assert edge.update_virtuals(("c", "fortran", "mpi", "lapack"))
+    assert edge.virtuals == ("blas", "c", "fortran", "lapack", "mpi")
+    assert not edge.update_virtuals("mpi")
+    assert not edge.update_virtuals(("c", "fortran", "mpi", "lapack"))
+    assert edge.virtuals == ("blas", "c", "fortran", "lapack", "mpi")
 
 
 def test_virtual_queries_work_for_strings_and_lists():

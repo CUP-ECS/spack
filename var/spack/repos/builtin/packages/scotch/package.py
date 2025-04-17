@@ -38,10 +38,6 @@ class Scotch(CMakePackage, MakefilePackage):
     version("6.0.0", sha256="8206127d038bda868dda5c5a7f60ef8224f2e368298fbb01bf13fa250e378dd4")
     version("5.1.10b", sha256="54c9e7fafefd49d8b2017d179d4f11a655abe10365961583baaddc4eeb6a9add")
 
-    depends_on("c", type="build")
-    depends_on("cxx", type="build")
-    depends_on("fortran", type="build")
-
     build_system(conditional("cmake", when="@7:"), "makefile", default="cmake")
     variant("threads", default=True, description="use POSIX Pthreads within Scotch and PT-Scotch")
     variant(
@@ -64,6 +60,10 @@ class Scotch(CMakePackage, MakefilePackage):
         when="@7.0.1",
         description="Link error handling library to libscotch/libptscotch",
     )
+
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
+    depends_on("fortran", type="build")
 
     # Does not build with flex 2.6.[23]
     depends_on("flex@:2.6.1,2.6.4:", type="build")
@@ -140,8 +140,16 @@ class CMakeBuilder(spack.build_systems.cmake.CMakeBuilder):
 
         if "+int64" in self.spec:
             args.append("-DINTSIZE=64")
+        elif self.is_64bit():
+            c_flags = []
+            c_flags.append("-DIDXSIZE64")
+            c_flags.append("-DINTSIZE32")
+            args.append(self.define("CMAKE_C_FLAGS", " ".join(c_flags)))
 
         return args
+
+    def is_64bit(self):
+        return "64" in str(self.pkg.spec.target.family)
 
     @when("+noarch")
     def setup_build_environment(self, env):
@@ -155,13 +163,17 @@ class MakefileBuilder(spack.build_systems.makefile.MakefileBuilder):
         makefile_inc = []
         cflags = ["-O3", "-DCOMMON_RANDOM_FIXED_SEED", "-DSCOTCH_DETERMINISTIC", "-DSCOTCH_RENAME"]
 
+        # SCOTCH_Num typedef: size of integers in arguments
+        # SCOTCH_Idx typedef: indices for addressing
         if "+int64" in self.spec:
-            # SCOTCH_Num typedef: size of integers in arguments
             cflags.append("-DINTSIZE64")
-            cflags.append("-DIDXSIZE64")  # SCOTCH_Idx typedef: indices for addressing
+            cflags.append("-DIDXSIZE64")
+        elif self.is_64bit():
+            cflags.append("-DINTSIZE32")
+            cflags.append("-DIDXSIZE64")
         else:
             cflags.append("-DINTSIZE32")
-            cflags.append("-DIDXSIZE64")  # SCOTCH_Idx typedef: indices for addressing
+            cflags.append("-DIDXSIZE32")
 
         if self.spec.satisfies("platform=darwin"):
             cflags.extend(["-Drestrict=__restrict"])
@@ -282,6 +294,9 @@ class MakefileBuilder(spack.build_systems.makefile.MakefileBuilder):
         with working_dir("src"):
             with open("Makefile.inc", "w") as fh:
                 fh.write("\n".join(makefile_inc))
+
+    def is_64bit(self):
+        return "64" in str(self.pkg.spec.target.family)
 
     @property
     def build_targets(self):

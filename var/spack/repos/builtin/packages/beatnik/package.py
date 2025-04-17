@@ -26,6 +26,8 @@ class Beatnik(CMakePackage, CudaPackage, ROCmPackage):
     variant("openmp", default=False, description="Use OpenMP support from subpackages")
 
     # Dependencies for all Beatnik versions
+    depends_on("cxx", type="build")  # generated
+
     depends_on("mpi")
     with when("+cuda"):
         depends_on("mpich +cuda", when="^[virtuals=mpi] mpich")
