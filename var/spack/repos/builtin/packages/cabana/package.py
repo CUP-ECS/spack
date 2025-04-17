@@ -83,7 +83,18 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("heffte {0}".format(rocm_dep), when="+heffte {0}".format(rocm_dep))
         depends_on("arborx {0}".format(rocm_dep), when="+arborx {0}".format(rocm_dep))
         depends_on("hypre {0}".format(rocm_dep), when="+hypre {0}".format(rocm_dep))
-
+    
+    # Require GPU-aware MPI
+    depends_on("mpich +cuda", when="+mpi +cuda ^mpich")
+    depends_on("mvapich +cuda", when="+mpi +cuda ^mvapich")
+    depends_on("mvapich2 +cuda", when="+mpi +cuda ^mvapich2")
+    depends_on("mvapich2-gdr +cuda", when="+mpi +cuda ^mvapich2-gdr")
+    depends_on("openmpi +cuda", when="+mpi +cuda ^openmpi")
+    
+    depends_on("mpich +rocm", when="+mpi +rocm ^mpich")
+    depends_on("mvapich2-gdr +rocm", when="+mpi +rocm ^mvapich2-gdr")
+    depends_on("cray-mpich +rocm", when="+mpi +rocm ^cray-mpich")
+          
     conflicts("+cuda", when="cuda_arch=none")
     conflicts("+rocm", when="amdgpu_target=none")
 
@@ -160,5 +171,10 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
         # Use hipcc for HIP.
         if self.spec.satisfies("+rocm"):
             options.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
+            if self.spec.satisfies("^cray-mpich"):
+              gtl_dir = join_path(self.spec["cray-mpich"].prefix, "..", "..", "..", "gtl", "lib")
+              options.append(
+                "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath={0} -L{0} -lmpi_gtl_hsa".format(gtl_dir)
+              )
 
         return options
