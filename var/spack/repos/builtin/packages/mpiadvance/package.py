@@ -4,7 +4,7 @@
 
 from spack.package import *
 
-class MpiAdvance(CMakePackage, CudaPackage, ROCmPackage):
+class Mpiadvance(CMakePackage, CudaPackage, ROCmPackage):
     """Locality-aware optimizations for standard MPI collectives as well as neighborhood collectives."""
 
     homepage = "https://github.com/mpi-advance"
