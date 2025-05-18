@@ -42,10 +42,10 @@ class Cabanaghost(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos @4:")
     depends_on("kokkos +cuda +cuda_lambda +cuda_constexpr", when="+cuda")
     depends_on("kokkos +rocm", when="+rocm")
-    depends_on("kokkos +wrapper", when="%gcc+cuda")
+    depends_on("kokkos +wrapper", when="+cuda %gcc")
 
     # Cabana dependencies
-    depends_on("cabana @0.6.0: +grid +silo +hdf5 +mpi")
+    depends_on("cabana @0.6.0: +grid +silo +hdf5 +mpi +stream_comm")
     depends_on("cabana +cuda", when="+cuda")
     depends_on("cabana +rocm", when="+rocm")
 

@@ -47,6 +47,11 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
     variant("examples", default=False, description="Build tutorial examples")
     variant("performance_testing", default=False, description="Build performance tests")
 
+    variant("stream_comm", default=False, description="Build with stream-triggered communications support")
+    variant("mpich", default=False, description="Build with MPICH-specific communication optimizations")
+    variant("mpi_advance", default=False, description="Build with MPI Advance communication optimizations")
+    variant("cray_mpi", default=False, description="Build with Cray MPICH-specific communication optimizations")
+
     depends_on("c", type="build", when="+mpi")
     depends_on("cxx", type="build")
 
@@ -102,6 +107,8 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("silo", when="@0.5.0:+silo")
     depends_on("hdf5", when="@0.6.0:+hdf5")
     depends_on("mpi", when="+mpi")
+    depends_on("mpich", when="+mpich")
+    depends_on("cray-mpich", when="+cray_mpi")
 
     # CMakeLists.txt of Cabana>=0.6 always enables HDF5 with CMake >= 3.26 (not changed post-0.6):
     conflicts("~hdf5", when="@0.6.0: ^cmake@3.26:")
@@ -112,6 +119,12 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
     # Cajita support requires MPI
     conflicts("+cajita ~mpi")
     conflicts("+grid ~mpi")
+
+    # Stream triggering requires MPI
+    conflicts("+stream_comm ~mpi")
+    conflicts("+mpich ~mpi")
+    conflicts("+mpi_advance ~mpi")
+    conflicts("+cray_mpi ~mpi")
 
     # The +grid does not support gcc>=13 (missing iostream/cstdint includes):
     conflicts("+grid", when="@:0.6 %gcc@13:")
@@ -130,8 +143,8 @@ class Cabana(CMakePackage, CudaPackage, ROCmPackage):
     def cmake_args(self):
         options = [self.define_from_variant("BUILD_SHARED_LIBS", "shared")]
 
-        enable = ["CAJITA", "TESTING", "EXAMPLES", "PERFORMANCE_TESTING"]
-        require = ["ALL", "ARBORX", "HEFFTE", "HYPRE", "SILO", "HDF5"]
+        enable = ["CAJITA", "TESTING", "EXAMPLES", "PERFORMANCE_TESTING", "STREAM_COMM"]
+        require = ["ALL", "ARBORX", "HEFFTE", "HYPRE", "SILO", "HDF5", "MPICH", "MPI_ADVANCE", "CRAY_MPI"]
 
         # These variables were removed in 0.3.0 (where backends are
         # automatically used from Kokkos)
