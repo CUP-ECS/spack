@@ -1,8 +1,8 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import argparse
 import sys
 
 import llnl.util.lang as lang
@@ -27,7 +27,7 @@ section = "config"
 level = "long"
 
 
-def setup_parser(subparser):
+def setup_parser(subparser: argparse.ArgumentParser) -> None:
     arguments.add_common_arguments(subparser, ["no_checksum"])
 
     sp = subparser.add_subparsers(metavar="SUBCOMMAND", dest="mirror_command")
@@ -46,7 +46,7 @@ def setup_parser(subparser):
         " in the current environment if there is an active environment"
         " (this requires significant time and space)",
     )
-    create_parser.add_argument("-f", "--file", help="file with specs of packages to put in mirror")
+    create_parser.add_argument("--file", help="file with specs of packages to put in mirror")
     create_parser.add_argument(
         "--exclude-file",
         help="specs which Spack should not try to add to a mirror"
@@ -226,7 +226,7 @@ def setup_parser(subparser):
     arguments.add_connection_args(set_parser, False)
 
     # List
-    list_parser = sp.add_parser("list", help=mirror_list.__doc__)
+    list_parser = sp.add_parser("list", aliases=["ls"], help=mirror_list.__doc__)
     list_parser.add_argument(
         "--scope", action=arguments.ConfigScope, help="configuration scope to read from"
     )
@@ -493,7 +493,7 @@ def extend_with_additional_versions(specs, num_versions):
         mirror_specs = spack.mirrors.utils.get_all_versions(specs)
     else:
         mirror_specs = spack.mirrors.utils.get_matching_versions(specs, num_versions=num_versions)
-    mirror_specs = [x.concretized() for x in mirror_specs]
+    mirror_specs = [spack.concretize.concretize_one(x) for x in mirror_specs]
     return mirror_specs
 
 
@@ -515,18 +515,18 @@ def extend_with_dependencies(specs):
 
 
 def concrete_specs_from_cli_or_file(args):
-    tty.msg("Concretizing input specs")
-    with spack.concretize.disable_compiler_existence_check():
-        if args.specs:
-            specs = spack.cmd.parse_specs(args.specs, concretize=True)
-            if not specs:
-                raise SpackError("unable to parse specs from command line")
+    if args.specs:
+        specs = spack.cmd.parse_specs(args.specs, concretize=False)
+        if not specs:
+            raise SpackError("unable to parse specs from command line")
 
-        if args.file:
-            specs = specs_from_text_file(args.file, concretize=True)
-            if not specs:
-                raise SpackError("unable to parse specs from file '{}'".format(args.file))
-    return specs
+    if args.file:
+        specs = specs_from_text_file(args.file, concretize=False)
+        if not specs:
+            raise SpackError("unable to parse specs from file '{}'".format(args.file))
+
+    concrete_specs = spack.cmd.matching_specs_from_env(specs)
+    return concrete_specs
 
 
 class IncludeFilter:
@@ -546,7 +546,7 @@ class IncludeFilter:
         package does not explicitly forbid redistributing source."""
         if self.private:
             return True
-        elif x.package_class.redistribute_source(x):
+        elif spack.repo.PATH.get_pkg_class(x.fullname).redistribute_source(x):
             return True
         else:
             tty.debug(
@@ -609,11 +609,6 @@ def process_mirror_stats(present, mirrored, error):
 
 def mirror_create(args):
     """create a directory to be used as a spack mirror, and fill it with package archives"""
-    if args.specs and args.all:
-        raise SpackError(
-            "cannot specify specs on command line if you chose to mirror all specs with '--all'"
-        )
-
     if args.file and args.all:
         raise SpackError(
             "cannot specify specs with a file if you chose to mirror all specs with '--all'"
@@ -702,6 +697,7 @@ def mirror(parser, args):
         "set-url": mirror_set_url,
         "set": mirror_set,
         "list": mirror_list,
+        "ls": mirror_list,
     }
 
     if args.no_checksum:

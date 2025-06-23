@@ -1,8 +1,8 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import argparse
 import sys
 import textwrap
 from itertools import zip_longest
@@ -41,7 +41,7 @@ def padder(str_list, extra=0):
     return pad
 
 
-def setup_parser(subparser):
+def setup_parser(subparser: argparse.ArgumentParser) -> None:
     subparser.add_argument(
         "-a", "--all", action="store_true", default=False, help="output all package information"
     )
@@ -50,9 +50,9 @@ def setup_parser(subparser):
         ("--detectable", print_detectable.__doc__),
         ("--maintainers", print_maintainers.__doc__),
         ("--namespace", print_namespace.__doc__),
-        ("--no-dependencies", "do not " + print_dependencies.__doc__),
-        ("--no-variants", "do not " + print_variants.__doc__),
-        ("--no-versions", "do not " + print_versions.__doc__),
+        ("--no-dependencies", f"do not {print_dependencies.__doc__}"),
+        ("--no-variants", f"do not {print_variants.__doc__}"),
+        ("--no-versions", f"do not {print_versions.__doc__}"),
         ("--phases", print_phases.__doc__),
         ("--tags", print_tags.__doc__),
         ("--tests", print_tests.__doc__),

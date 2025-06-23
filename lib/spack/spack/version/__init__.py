@@ -1,5 +1,4 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
@@ -21,6 +20,7 @@ from .common import (
     VersionError,
     VersionLookupError,
     infinity_versions,
+    is_git_commit_sha,
     is_git_version,
 )
 from .version_types import (
@@ -59,6 +59,7 @@ __all__ = [
     "any_version",
     "from_string",
     "infinity_versions",
+    "is_git_commit_sha",
     "is_git_version",
     "ver",
 ]

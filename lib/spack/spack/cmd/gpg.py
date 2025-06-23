@@ -1,5 +1,4 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
@@ -20,8 +19,8 @@ section = "packaging"
 level = "long"
 
 
-def setup_parser(subparser):
-    setup_parser.parser = subparser
+def setup_parser(subparser: argparse.ArgumentParser) -> None:
+    setattr(setup_parser, "parser", subparser)
     subparsers = subparser.add_subparsers(help="GPG sub-commands")
 
     verify = subparsers.add_parser("verify", help=gpg_verify.__doc__)

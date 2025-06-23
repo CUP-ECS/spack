@@ -1,5 +1,4 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
@@ -66,7 +65,7 @@ class DirectiveMeta(type):
         # The instance is being initialized: if it is a package we must ensure
         # that the directives are called to set it up.
 
-        if cls.__module__.startswith(spack.repo.ROOT_PYTHON_NAMESPACE):
+        if spack.repo.is_package_module(cls.__module__):
             # Ensure the presence of the dictionaries associated with the directives.
             # All dictionaries are defaultdicts that create lists for missing keys.
             for d in DirectiveMeta._directive_dict_names:
@@ -145,7 +144,6 @@ class DirectiveMeta(type):
         Package class, and it's how Spack gets information from the
         packages to the core.
         """
-        global directive_names
 
         if isinstance(dicts, str):
             dicts = (dicts,)

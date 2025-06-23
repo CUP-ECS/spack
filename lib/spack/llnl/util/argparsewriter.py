@@ -1,5 +1,4 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
@@ -67,7 +66,7 @@ class ArgparseWriter(argparse.HelpFormatter, abc.ABC):
         self.aliases = aliases
 
     def parse(self, parser: ArgumentParser, prog: str) -> Command:
-        """Parse the parser object and return the relavent components.
+        """Parse the parser object and return the relevant components.
 
         Args:
             parser: Command parser.

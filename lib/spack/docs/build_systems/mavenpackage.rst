@@ -1,5 +1,4 @@
-.. Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-   Spack Project Developers. See the top-level COPYRIGHT file for details.
+.. Copyright Spack Project Developers. See COPYRIGHT file for details.
 
    SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
@@ -11,7 +10,7 @@ Maven
 
 Apache Maven is a general-purpose build system that does not rely
 on Makefiles to build software. It is designed for building and
-managing and Java-based project.
+managing Java-based projects.
 
 ^^^^^^
 Phases

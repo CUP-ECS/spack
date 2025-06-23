@@ -1,5 +1,4 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 """Classes and functions to register audit checks for various parts of
@@ -332,7 +331,7 @@ def _wrongly_named_spec(error_cls):
 def _ensure_all_virtual_packages_have_default_providers(error_cls):
     """All virtual packages must have a default provider explicitly set."""
     configuration = spack.config.create()
-    defaults = configuration.get("packages", scope="defaults")
+    defaults = configuration.get_config("packages", _merged_scope="defaults")
     default_providers = defaults["all"]["providers"]
     virtuals = spack.repo.PATH.provider_index.providers
     default_providers_filename = configuration.scopes["defaults"].get_section_filename("packages")
@@ -351,7 +350,7 @@ def _ensure_no_folders_without_package_py(error_cls):
     for repository in spack.repo.PATH.repos:
         missing = []
         for entry in os.scandir(repository.packages_path):
-            if not entry.is_dir():
+            if not entry.is_dir() or entry.name == "__pycache__":
                 continue
             package_py = pathlib.Path(entry.path) / spack.repo.package_file_name
             if not package_py.exists():
@@ -1011,7 +1010,7 @@ def _issues_in_depends_on_directive(pkgs, error_cls):
             for dep_name, dep in deps_by_name.items():
 
                 def check_virtual_with_variants(spec, msg):
-                    if not spec.virtual or not spec.variants:
+                    if not spack.repo.PATH.is_virtual(spec.name) or not spec.variants:
                         return
                     error = error_cls(
                         f"{pkg_name}: {msg}",
@@ -1357,14 +1356,8 @@ def _test_detection_by_executable(pkgs, debug_log, error_cls):
 
             def _compare_extra_attribute(_expected, _detected, *, _spec):
                 result = []
-                # Check items are of the same type
-                if not isinstance(_detected, type(_expected)):
-                    _summary = f'{pkg_name}: error when trying to detect "{_expected}"'
-                    _details = [f"{_detected} was detected instead"]
-                    return [error_cls(summary=_summary, details=_details)]
-
                 # If they are string expected is a regex
-                if isinstance(_expected, str):
+                if isinstance(_expected, str) and isinstance(_detected, str):
                     try:
                         _regex = re.compile(_expected)
                     except re.error:
@@ -1380,7 +1373,7 @@ def _test_detection_by_executable(pkgs, debug_log, error_cls):
                         _details = [f"{_detected} does not match the regex"]
                         return [error_cls(summary=_summary, details=_details)]
 
-                if isinstance(_expected, dict):
+                elif isinstance(_expected, dict) and isinstance(_detected, dict):
                     _not_detected = set(_expected.keys()) - set(_detected.keys())
                     if _not_detected:
                         _summary = f"{pkg_name}: cannot detect some attributes for spec {_spec}"
@@ -1395,6 +1388,10 @@ def _test_detection_by_executable(pkgs, debug_log, error_cls):
                         result.extend(
                             _compare_extra_attribute(_expected[_key], _detected[_key], _spec=_spec)
                         )
+                else:
+                    _summary = f'{pkg_name}: error when trying to detect "{_expected}"'
+                    _details = [f"{_detected} was detected instead"]
+                    return [error_cls(summary=_summary, details=_details)]
 
                 return result
 

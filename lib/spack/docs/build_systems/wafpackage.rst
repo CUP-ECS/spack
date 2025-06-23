@@ -1,5 +1,4 @@
-.. Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-   Spack Project Developers. See the top-level COPYRIGHT file for details.
+.. Copyright Spack Project Developers. See COPYRIGHT file for details.
 
    SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
@@ -99,7 +98,7 @@ the following dependency automatically:
 Waf only supports Python 2.5 and up.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^
-Passing arguments to waf
+Passing arguments to Waf
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 As previously mentioned, each phase comes with a ``<phase_args>``

@@ -1,5 +1,4 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 import errno
@@ -465,6 +464,13 @@ class Stage(LockableStagingDir):
     def source_path(self):
         """Returns the well-known source directory path."""
         return os.path.join(self.path, _source_path_subdir)
+
+    @property
+    def single_file(self):
+        assert self.expanded, "Must expand stage before calling single_file"
+        files = os.listdir(self.source_path)
+        assert len(files) == 1, f"Expected one file in stage, found {files}"
+        return os.path.join(self.source_path, files[0])
 
     def _generate_fetchers(self, mirror_only=False) -> Generator["fs.FetchStrategy", None, None]:
         fetchers: List[fs.FetchStrategy] = []

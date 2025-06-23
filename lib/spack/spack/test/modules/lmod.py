@@ -1,14 +1,13 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import os
 
+import _vendoring.archspec.cpu
 import pytest
 
-import archspec.cpu
-
+import spack.concretize
 import spack.config
 import spack.environment as ev
 import spack.main
@@ -112,7 +111,7 @@ class TestLmod:
         self, factory, module_configuration, compiler_factory
     ):
         with spack.config.override(
-            "compilers", [compiler_factory(spec="clang@3.3", operating_system="debian6")]
+            "packages", {"llvm": {"externals": [compiler_factory(spec="llvm@3.3")]}}
         ):
             module_configuration("complex_hierarchy")
             module, spec = factory("intel-oneapi-compilers%clang@3.3")
@@ -120,7 +119,7 @@ class TestLmod:
             provides = module.conf.provides
 
             assert "compiler" in provides
-            assert provides["compiler"] == spack.spec.CompilerSpec("oneapi@=3.0")
+            assert provides["compiler"] == spack.spec.Spec("intel-oneapi-compilers@=3.0")
 
     def test_simple_case(self, modulefile_content, module_configuration):
         """Tests the generation of a simple Lua module file."""
@@ -139,7 +138,7 @@ class TestLmod:
         module_configuration("autoload_direct")
         content = modulefile_content(mpileaks_spec_string)
 
-        assert len([x for x in content if "depends_on(" in x]) == 2
+        assert len([x for x in content if "depends_on(" in x]) == 3
 
     def test_autoload_all(self, modulefile_content, module_configuration):
         """Tests the automatic loading of all dependencies."""
@@ -147,7 +146,7 @@ class TestLmod:
         module_configuration("autoload_all")
         content = modulefile_content(mpileaks_spec_string)
 
-        assert len([x for x in content if "depends_on(" in x]) == 5
+        assert len([x for x in content if "depends_on(" in x]) == 6
 
     def test_alter_environment(self, modulefile_content, module_configuration):
         """Tests modifications to run-time environment."""
@@ -221,7 +220,8 @@ class TestLmod:
         assert len([x for x in content if 'setenv("FOO", "{{name}}, {name}, {{}}, {}")' in x]) == 1
 
     @pytest.mark.skipif(
-        str(archspec.cpu.host().family) != "x86_64", reason="test data is specific for x86_64"
+        str(_vendoring.archspec.cpu.host().family) != "x86_64",
+        reason="test data is specific for x86_64",
     )
     def test_help_message(self, modulefile_content, module_configuration):
         """Tests the generation of module help message."""
@@ -265,7 +265,7 @@ class TestLmod:
         module_configuration("exclude")
         content = modulefile_content(mpileaks_spec_string)
 
-        assert len([x for x in content if "depends_on(" in x]) == 1
+        assert len([x for x in content if "depends_on(" in x]) == 2
 
     def test_no_hash(self, factory, module_configuration):
         """Makes sure that virtual providers (in the hierarchy) always
@@ -372,7 +372,7 @@ class TestLmod:
         module_configuration("missing_core_compilers")
 
         # Our mock paths must be detected as system paths
-        monkeypatch.setattr(spack.util.environment, "SYSTEM_DIRS", ["/path/to"])
+        monkeypatch.setattr(spack.util.environment, "SYSTEM_DIRS", ["/path/bin"])
 
         # We don't want to really write into user configuration
         # when running tests
@@ -434,9 +434,9 @@ class TestLmod:
     ):
         with ev.create_in_dir(str(tmpdir), with_view=True) as e:
             module_configuration("with_view")
-            install("--add", "cmake")
+            install("--fake", "--add", "cmake")
 
-            spec = spack.spec.Spec("cmake").concretized()
+            spec = spack.concretize.concretize_one("cmake")
 
             content = modulefile_content("cmake")
             expected = e.default_view.get_projection_for_spec(spec)
@@ -456,7 +456,7 @@ class TestLmod:
         """Tests the addition and removal of hide command in modulerc."""
         module_configuration("hide_implicits")
 
-        spec = spack.spec.Spec("mpileaks@2.3").concretized()
+        spec = spack.concretize.concretize_one("mpileaks@2.3")
 
         # mpileaks is defined as implicit, thus hide command should appear in modulerc
         writer = writer_cls(spec, "default", False)
@@ -508,8 +508,8 @@ class TestLmod:
         # three versions of mpileaks are implicit
         writer = writer_cls(spec, "default", False)
         writer.write(overwrite=True)
-        spec_alt1 = spack.spec.Spec("mpileaks@2.2").concretized()
-        spec_alt2 = spack.spec.Spec("mpileaks@2.1").concretized()
+        spec_alt1 = spack.concretize.concretize_one("mpileaks@2.2")
+        spec_alt2 = spack.concretize.concretize_one("mpileaks@2.1")
         writer_alt1 = writer_cls(spec_alt1, "default", False)
         writer_alt1.write(overwrite=True)
         writer_alt2 = writer_cls(spec_alt2, "default", False)
