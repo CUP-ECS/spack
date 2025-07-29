@@ -14,12 +14,6 @@ import stat
 import warnings
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-import llnl.util.filesystem as fs
-import llnl.util.tty as tty
-import llnl.util.tty.color as clr
-from llnl.util.link_tree import ConflictingSpecsError
-from llnl.util.symlink import islink, readlink, symlink
-
 import spack
 import spack.concretize
 import spack.config
@@ -27,6 +21,9 @@ import spack.deptypes as dt
 import spack.error
 import spack.filesystem_view as fsv
 import spack.hash_types as ht
+import spack.llnl.util.filesystem as fs
+import spack.llnl.util.tty as tty
+import spack.llnl.util.tty.color as clr
 import spack.paths
 import spack.repo
 import spack.schema.env
@@ -41,6 +38,8 @@ import spack.util.spack_json as sjson
 import spack.util.spack_yaml as syaml
 from spack import traverse
 from spack.installer import PackageInstaller
+from spack.llnl.util.filesystem import islink, readlink, symlink
+from spack.llnl.util.link_tree import ConflictingSpecsError
 from spack.schema.env import TOP_LEVEL_KEY
 from spack.spec import Spec
 from spack.util.path import substitute_path_variables
@@ -89,9 +88,10 @@ def environment_name(path: Union[str, pathlib.Path]) -> str:
     This is the path for directory environments, and just the name
     for managed environments.
     """
+    env_root = pathlib.Path(env_root_path()).resolve()
     path_str = str(path)
-    if path_str.startswith(env_root_path()):
-        return os.path.basename(path_str)
+    if path_str.startswith(str(env_root)):
+        return str(pathlib.Path(path_str).relative_to(env_root))
     else:
         return path_str
 
@@ -125,8 +125,10 @@ spack:
     )
 
 
-#: regex for validating enviroment names
-valid_environment_name_re = r"^\w[\w-]*$"
+sep_re = re.escape(os.sep)
+
+#: regex for validating environment names
+valid_environment_name_re = rf"^\w[{sep_re}\w-]*$"
 
 #: version of the lockfile format. Must increase monotonically.
 lockfile_format_version = 6
@@ -549,11 +551,22 @@ def all_environment_names():
     if not os.path.exists(env_root_path()):
         return []
 
-    candidates = sorted(os.listdir(env_root_path()))
+    env_root = pathlib.Path(env_root_path()).resolve()
+
+    def yaml_paths():
+        for root, dirs, files in os.walk(env_root, topdown=True, followlinks=True):
+            dirs[:] = [
+                d
+                for d in dirs
+                if not d.startswith(".") and not env_root.samefile(os.path.join(root, d))
+            ]
+            if manifest_name in files:
+                yield os.path.join(root, manifest_name)
+
     names = []
-    for candidate in candidates:
-        yaml_path = os.path.join(_root(candidate), manifest_name)
-        if valid_env_name(candidate) and os.path.exists(yaml_path):
+    for yaml_path in yaml_paths():
+        candidate = str(pathlib.Path(yaml_path).relative_to(env_root).parent)
+        if valid_env_name(candidate):
             names.append(candidate)
     return names
 
@@ -1479,7 +1492,7 @@ class Environment:
 
         Arguments:
             spec: Spec to deconcretize. This must be a root of the environment
-            concrete: If True, find all instances of spec as concrete in the environemnt.
+            concrete: If True, find all instances of spec as concrete in the environment.
                 If False, find a single instance of the abstract spec as root of the environment.
         """
         # spec has to be a root of the environment

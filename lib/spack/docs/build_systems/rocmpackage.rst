@@ -4,16 +4,16 @@
 
 .. _rocmpackage:
 
-----
+------
 ROCm
-----
+------
 
 The ``ROCmPackage`` is not a build system but a helper package. Like ``CudaPackage``,
 it provides standard variants, dependencies, and conflicts to facilitate building
 packages targeting AMD GPUs.
 
 You can find the source for this package (and suggestions for setting up your ``packages.yaml`` file) at
-`<https://github.com/spack/spack/blob/develop/lib/spack/spack/build_systems/rocm.py>`__.
+`<https://github.com/spack/spack-packages/blob/develop/repos/spack_repo/builtin/build_systems/rocm.py>`__.
 
 ^^^^^^^^
 Variants
@@ -65,9 +65,9 @@ standard AMD HIP compiler flags.
     This method must be explicitly called when you are creating the
     arguments for your build in order to use the values.
 
-^^^^^
+^^^^^^
 Usage
-^^^^^
+^^^^^^
 
 This helper package can be added to your package by adding it as a base
 class of your package.  For example, you can add it to your
